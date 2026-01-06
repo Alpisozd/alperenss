@@ -3,28 +3,485 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Alperen'i Ne Kadar Tanıyorsun?</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Kafada Top Sektirme</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1221;
+      --panel: #111a2f;
+      --text: #e7ecf4;
+      --accent: #5ad1ff;
+      --accent-2: #ffb347;
+      --danger: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at 30% 20%, #13203a, #0b1221 45%),
+                  radial-gradient(circle at 80% 10%, #1c2b4b, transparent 40%),
+                  var(--bg);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .frame {
+      width: min(1100px, 96vw);
+      height: min(720px, 92vh);
+      background: var(--panel);
+      border: 2px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header {
+      position: absolute;
+      inset: 0 0 auto 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hud {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 18px;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 8px 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pill span.value {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    #comboLabel {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent-2);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: radial-gradient(circle at 50% 20%, rgba(90, 209, 255, 0.08), transparent 40%),
+                  radial-gradient(circle at 20% 80%, rgba(255, 179, 71, 0.08), transparent 35%),
+                  #0d1629;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(6, 9, 16, 0.72);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      text-align: center;
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .overlay .card {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 24px 32px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      min-width: min(420px, 90vw);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .overlay h2 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      letter-spacing: 0.03em;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin: 14px 0 22px;
+      font-weight: 700;
+    }
+
+    .stats span {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hint {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #5ad1ff, #7ae0ff);
+      color: #06101e;
+      font-weight: 800;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(90, 209, 255, 0.4);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .btn:active { transform: translateY(1px); box-shadow: 0 8px 20px rgba(90, 209, 255, 0.3); }
+  </style>
 </head>
 <body>
-  <main class="container">
-    <h1>Alperen'i Ne Kadar Tanıyorsun? 🤔</h1>
-    <p class="lead">10 soruluk kısa bir test — doğru cevaplarla puan kazan ve sonucu gör.</p>
+  <div class="frame">
+    <header>
+      <div class="hud">
+        <div class="pill" aria-live="polite">Skor: <span class="value" id="score">0</span></div>
+        <div class="pill">Level: <span class="value" id="level">1</span></div>
+      </div>
+    </header>
+    <div id="comboLabel">COMBO x2</div>
+    <canvas id="game" width="1100" height="720" aria-label="Kafada top sektirme oyunu"></canvas>
 
-    <div id="quiz"></div>
-
-    <div class="actions">
-      <button id="submitBtn" class="btn">Cevapları Gönder</button>
-      <button id="retryBtn" class="btn secondary" style="display:none">Tekrar Dene</button>
+    <div id="overlay" class="overlay" role="alert">
+      <div class="card">
+        <h2 id="overlayTitle">Game Over</h2>
+        <div class="stats">
+          <div>Skor: <span id="finalScore">0</span></div>
+          <div>En Yüksek: <span id="bestScore">0</span></div>
+          <div>Level: <span id="finalLevel">1</span></div>
+        </div>
+        <button class="btn" id="restartBtn">Yeniden Başlat (R)</button>
+        <div class="hint">Kontroller: A/D veya ←/→, fare hareketi, dokunmatik sürükle.</div>
+      </div>
     </div>
+  </div>
 
-    <div id="result" class="result" aria-live="polite"></div>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const overlay = document.getElementById('overlay');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalLevelEl = document.getElementById('finalLevel');
+    const bestScoreEl = document.getElementById('bestScore');
+    const restartBtn = document.getElementById('restartBtn');
+    const comboLabel = document.getElementById('comboLabel');
 
-    <footer>
-      <small>İsterseniz soruları `script.js` içinde güncelleyebilirsiniz.</small>
-    </footer>
-  </main>
+    const state = {
+      paddle: {
+        width: 140,
+        height: 18,
+        x: canvas.width / 2,
+        y: canvas.height - 60,
+        speed: 720
+      },
+      ball: {
+        x: canvas.width / 2,
+        y: 120,
+        radius: 14,
+        vx: 220,
+        vy: 0
+      },
+      gravity: 980,
+      maxSpeedY: 1400,
+      maxSpeedX: 900,
+      bounceFactor: 0.98,
+      score: 0,
+      combo: 0,
+      level: 1,
+      running: true,
+      lastTime: performance.now(),
+      keys: new Set(),
+      mouseX: canvas.width / 2,
+      hasMouse: false,
+      touchActive: false,
+      activePointerId: null
+    };
 
-  <script src="script.js"></script>
+    const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+    function reset() {
+      state.paddle.width = 140;
+      state.paddle.x = canvas.width / 2;
+      state.paddle.y = canvas.height - 60;
+      state.ball.x = canvas.width / 2;
+      state.ball.y = 120;
+      state.ball.vx = 220;
+      state.ball.vy = 0;
+      state.gravity = 980;
+      state.maxSpeedY = 1400;
+      state.maxSpeedX = 900;
+      state.score = 0;
+      state.combo = 0;
+      state.level = 1;
+      state.running = true;
+      state.lastTime = performance.now();
+      overlay.classList.remove('visible');
+      updateHud();
+      hideCombo();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      levelEl.textContent = state.level;
+      if (state.combo >= 2) {
+        comboLabel.textContent = `COMBO x${state.combo}`;
+        comboLabel.style.opacity = 1;
+        comboLabel.style.transform = 'translate(-50%, 0)';
+      } else {
+        hideCombo();
+      }
+    }
+
+    function hideCombo() {
+      comboLabel.style.opacity = 0;
+      comboLabel.style.transform = 'translate(-50%, -6px)';
+    }
+
+    function updateDifficulty() {
+      state.level = 1 + Math.floor(state.score / 10);
+      const increment = Math.floor(state.score / 10);
+      state.gravity = 980 + increment * 80;
+      state.maxSpeedY = 1400 + increment * 120;
+      state.maxSpeedX = 900 + increment * 80;
+      const initialWidth = 140;
+      state.paddle.width = Math.max(90, initialWidth - increment * 4);
+    }
+
+    function applyInput(dt) {
+      let targetX = state.paddle.x;
+
+      if (state.touchActive) {
+        targetX = state.touchX ?? targetX;
+      } else if (state.hasMouse) {
+        targetX = state.mouseX;
+      }
+
+      if (state.keys.has('ArrowLeft') || state.keys.has('a')) {
+        targetX = state.paddle.x - state.paddle.speed * dt;
+      }
+      if (state.keys.has('ArrowRight') || state.keys.has('d')) {
+        targetX = state.paddle.x + state.paddle.speed * dt;
+      }
+
+      state.paddle.x = clamp(targetX, state.paddle.width / 2, canvas.width - state.paddle.width / 2);
+    }
+
+    function circleRectCollision(cx, cy, r, rx, ry, rw, rh) {
+      const closestX = clamp(cx, rx - rw / 2, rx + rw / 2);
+      const closestY = clamp(cy, ry - rh / 2, ry + rh / 2);
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return dx * dx + dy * dy <= r * r;
+    }
+
+    function handleBall(dt) {
+      const b = state.ball;
+      b.vy += state.gravity * dt;
+      b.vx = clamp(b.vx, -state.maxSpeedX, state.maxSpeedX);
+      b.vy = clamp(b.vy, -state.maxSpeedY, state.maxSpeedY);
+
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+
+      // Walls
+      if (b.x - b.radius < 0) {
+        b.x = b.radius;
+        b.vx = Math.abs(b.vx) * state.bounceFactor;
+      } else if (b.x + b.radius > canvas.width) {
+        b.x = canvas.width - b.radius;
+        b.vx = -Math.abs(b.vx) * state.bounceFactor;
+      }
+
+      if (b.y - b.radius < 0) {
+        b.y = b.radius;
+        b.vy = Math.abs(b.vy) * state.bounceFactor;
+      }
+
+      // Paddle collision
+      if (circleRectCollision(b.x, b.y, b.radius, state.paddle.x, state.paddle.y, state.paddle.width, state.paddle.height) && b.vy > 0) {
+        const relative = (b.x - state.paddle.x) / (state.paddle.width / 2);
+        const angle = relative * Math.PI / 3; // steeper near edges
+        const speed = Math.min(Math.hypot(b.vx, b.vy) * state.bounceFactor + 120, state.maxSpeedY);
+        b.vx = Math.sin(angle) * speed;
+        b.vy = -Math.cos(angle) * speed;
+        b.y = state.paddle.y - state.paddle.height / 2 - b.radius - 0.5;
+        onPaddleHit();
+      }
+
+      if (b.y - b.radius > canvas.height) {
+        onGameOver();
+      }
+    }
+
+    function onPaddleHit() {
+      state.combo += 1;
+      const gained = 1 + Math.floor((state.combo - 1) / 5);
+      state.score += gained;
+      updateDifficulty();
+      updateHud();
+    }
+
+    function onGameOver() {
+      state.running = false;
+      state.combo = 0;
+      const best = Math.max(state.score, Number(localStorage.getItem('bestScore') || 0));
+      localStorage.setItem('bestScore', best);
+      finalScoreEl.textContent = state.score;
+      finalLevelEl.textContent = state.level;
+      bestScoreEl.textContent = best;
+      overlay.classList.add('visible');
+      hideCombo();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Paddle
+      ctx.fillStyle = '#5ad1ff';
+      ctx.beginPath();
+      ctx.roundRect(
+        state.paddle.x - state.paddle.width / 2,
+        state.paddle.y - state.paddle.height / 2,
+        state.paddle.width,
+        state.paddle.height,
+        8
+      );
+      ctx.fill();
+
+      // Ball
+      const gradient = ctx.createRadialGradient(state.ball.x - 4, state.ball.y - 6, 4, state.ball.x, state.ball.y, state.ball.radius + 4);
+      gradient.addColorStop(0, '#fff');
+      gradient.addColorStop(0.35, '#ffe3ba');
+      gradient.addColorStop(1, '#ffb347');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(state.ball.x, state.ball.y, state.ball.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(state.ball.x, state.ball.y + state.ball.radius, state.ball.radius * 1.1, state.ball.radius * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function loop(now) {
+      const dt = Math.min((now - state.lastTime) / 1000, 0.033);
+      state.lastTime = now;
+
+      if (state.running) {
+        applyInput(dt);
+        handleBall(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+    }
+
+    // Input handlers
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        reset();
+        requestAnimationFrame(loop);
+        return;
+      }
+      state.keys.add(e.key);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      state.keys.delete(e.key);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (state.touchActive) return;
+      const rect = canvas.getBoundingClientRect();
+      state.mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+      state.hasMouse = true;
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      e.preventDefault();
+      state.touchActive = true;
+      state.activePointerId = e.pointerId;
+      updateTouchPosition(e);
+    }, { passive: false });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (state.touchActive && e.pointerId === state.activePointerId) {
+        e.preventDefault();
+        updateTouchPosition(e);
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (e.pointerId === state.activePointerId) {
+        state.touchActive = false;
+        state.activePointerId = null;
+      }
+    });
+
+    canvas.addEventListener('pointercancel', (e) => {
+      if (e.pointerId === state.activePointerId) {
+        state.touchActive = false;
+        state.activePointerId = null;
+      }
+    });
+
+    function updateTouchPosition(e) {
+      const rect = canvas.getBoundingClientRect();
+      state.touchX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    }
+
+    restartBtn.addEventListener('click', () => {
+      reset();
+      requestAnimationFrame(loop);
+    });
+
+    // Start
+    reset();
+    requestAnimationFrame(loop);
+  </script>
 </body>
 </html>
